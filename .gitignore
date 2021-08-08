@@ -54,3 +54,4 @@ dkms.conf
 # CubeIDE project
 custom_bootloader/Debug
 bootloader_demo_app/Debug
+xmodem_server/Debug
