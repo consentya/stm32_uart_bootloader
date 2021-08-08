@@ -6,7 +6,11 @@
 #include "xmodem.h"
 #include "flash.h"
 #include "drv_uart.h"
+#include "user_app.h"
 
+#include <stdbool.h> /* boolean type */
+
+bool BLD_CheckBootRequestFlag();
 /**
   * @brief  The application entry point.
   *
@@ -21,7 +25,12 @@ int BLD_UserApp_Init(void)
 
   /* If the button is pressed, then jump to the user application,
    * otherwise stay in the bootloader. */
-  if(HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin))
+  /*Note: F4-DIS Button is pulled down */
+#if  AUTO_UPDATE > 0
+  if (BLD_CheckBootRequestFlag() == true)
+#else
+  if(HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == SET)
+#endif
   {
     uart_transmit_str((uint8_t*)"Jumping to user application...\n\r");
     flash_jump_to_app();
@@ -30,8 +39,15 @@ int BLD_UserApp_Init(void)
   return 1;
 }
 
-  int BLD_UserApp_Run(void)
-  {
+bool BLD_CheckBootRequestFlag()
+{
+	uint32_t autoFlag = flas_read_autoupdate_flag();
+
+	return (autoFlag == FLASH_AUTO_UPDATE_MAGIC_NUMBER);
+}
+
+int BLD_UserApp_Run(void)
+{
 	flash_init();
     /* Turn on the green LED to indicate, that we are in bootloader mode.*/
     HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);

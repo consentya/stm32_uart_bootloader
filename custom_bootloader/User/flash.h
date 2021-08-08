@@ -2,7 +2,7 @@
 #define FLASH_H_
 
 #include "stm32f4xx_hal.h"
-
+#include <stdbool.h>
 
 /* STM32F407 Sector address */
 #define ADDR_FLASH_SECTOR_0     ((uint32_t)0x08000000) /* Base @ of Sector 0, 16 Kbytes */
@@ -23,6 +23,8 @@
 #define FLASH_APP_START_ADDRESS ((uint32_t)ADDR_FLASH_SECTOR_2)
 #define FLASH_APP_END_ADDRESS   ((uint32_t)FLASH_BANK1_END) /**< Leave a little extra space at the end. */
 
+#define FLASH_AUTO_UPDATE_FLAG_ADDRESS    (FLASH_APP_END_ADDRESS -  0x04)
+#define FLASH_AUTO_UPDATE_MAGIC_NUMBER    (0xDEADBEEF)
 
 /* Status report for the functions. */
 typedef enum {
@@ -37,5 +39,7 @@ void flash_init(void);
 flash_status flash_erase(uint32_t address);
 flash_status flash_write(uint32_t address, uint32_t *data, uint32_t length);
 void flash_jump_to_app(void);
+uint32_t  flas_read_autoupdate_flag(void);
+bool  flash_set_autoupdate_flag(void);
 
 #endif /* FLASH_H_ */

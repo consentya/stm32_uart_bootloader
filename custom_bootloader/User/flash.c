@@ -13,6 +13,7 @@
 typedef void (*fnc_ptr)(void);
 
 
+
 /* Get sector number by address */
 static uint32_t GetSector(uint32_t Address)
 {
@@ -165,9 +166,25 @@ void flash_jump_to_app(void)
   /* Function pointer to the address of the user application. */
   fnc_ptr jump_to_app;
   jump_to_app = (fnc_ptr)(*(volatile uint32_t*) (FLASH_APP_START_ADDRESS+4u));
+
+  /* Reset all IPs to default state */
   HAL_DeInit();
+
   /* Change the main stack pointer. */
   __set_MSP(*(volatile uint32_t*)FLASH_APP_START_ADDRESS);
   jump_to_app();
 }
 
+uint32_t  flas_read_autoupdate_flag(void)
+{
+	return (*(volatile uint32_t*)(FLASH_AUTO_UPDATE_FLAG_ADDRESS)); /* volatile - prevent compiler optimizes code */
+}
+
+bool  flash_set_autoupdate_flag(void)
+{
+	// *(volatile uint32_t*)(FLASH_AUTO_UPDATE_FLAG_ADDRESS) = FLASH_AUTO_UPDATE_MAGIC_NUMBER;
+	// if (HAL_OK != HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, data[i]))
+
+	/* Veriry magic number */
+	return ( flas_read_autoupdate_flag() == FLASH_AUTO_UPDATE_MAGIC_NUMBER);
+}

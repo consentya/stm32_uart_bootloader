@@ -36,7 +36,8 @@ void UserApp_Blink_LED(void);
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define   APP_VERSION    "V1.0"
+//#define   APP_VERSION    "V1.0"
+#define   APP_VERSION    "V2.0"
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,7 +59,45 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+typedef uint32_t  (*calc_fnc_ptr)(uint32_t a, uint32_t b);
 
+uint32_t g_Calc_LookupTable[2]  =  {0};
+
+uint32_t  add(uint32_t a, uint32_t b)
+{
+	return  ( a + b );
+}
+
+uint32_t  subtract(uint32_t a, uint32_t b)
+{
+	return  ( a - b );
+}
+
+
+uint8_t _get_user_choice(uint32_t* a, uint32_t* b)
+{
+	return 0;
+}
+
+uint32_t compute_func()
+{
+	uint32_t a = 0;
+	uint32_t b = 0;
+	uint32_t result = 0;
+
+	calc_fnc_ptr my_calc_fn;
+
+	g_Calc_LookupTable[0] = (uint32_t)add;
+	g_Calc_LookupTable[1] = (uint32_t)subtract;
+
+	uint8_t choice = _get_user_choice(&a, &b);
+	// if (choice == 0) { add(a, b) }
+	my_calc_fn  = (calc_fnc_ptr)g_Calc_LookupTable[choice];
+
+	result = my_calc_fn(a, b);
+
+	return result;
+}
 /* USER CODE END 0 */
 
 /**
@@ -91,6 +130,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  compute_func();
   uart_transmit_str((uint8_t*)"****DEMO APPLICATION****\r\n");
   uart_transmit_str((uint8_t*)APP_VERSION);
   /* USER CODE END 2 */

@@ -83,7 +83,13 @@ void xmodem_receive(void)
         (void)uart_transmit_ch(X_ACK);
         (void)uart_transmit_str((uint8_t*)"\n\rFirmware updated!\n\r");
         (void)uart_transmit_str((uint8_t*)"Jumping to user application...\n\r");
-        flash_jump_to_app();
+        if ( flash_set_autoupdate_flag() == true)
+        {
+        	flash_jump_to_app();
+        } else {
+        	/*TODO: reset MCU */
+        	NVIC_SystemReset();
+        }
         break;
       /* Abort from host. */
       case X_CAN:
