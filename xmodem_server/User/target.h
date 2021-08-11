@@ -10,13 +10,13 @@
 
 #include <stdint.h>
 
-typedef int (* serial_getc_fn)(unsigned long timeout);
-typedef int (* serial_putc_fn)(unsigned char *packet, int len);
+typedef uint8_t (* serial_getc_fn)(uint16_t);
+typedef int (* serial_putc_fn)(uint8_t *, uint16_t );
 
 struct serial
 {
-	serial_getc_fn  readchar;
-	serial_putc_fn  serial_write;
+	serial_putc_fn   send_func;
+	serial_getc_fn   recv_func;
 };
 
 #endif /* TARGET_H_ */
