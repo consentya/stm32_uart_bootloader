@@ -24,6 +24,7 @@ uart_status uart_receive(uint8_t *data, uint16_t length)
   return status;
 }
 
+/*TODO: implement timeout */
 uint8_t     uart_receive_ch(uint16_t timeout)
 {
   uint8_t data = 0;

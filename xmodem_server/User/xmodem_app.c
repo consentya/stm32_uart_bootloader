@@ -25,43 +25,44 @@ void xmodem_app_init( void )
  * \param p_buffer  Pointer to send buffer
  * \param ul_length transfer file size
  */
-void xmodem_send_file(int8_t *p_buffer, uint32_t ul_length)
+void xmodem_send_file(const uint8_t *p_buffer, uint32_t ul_length)
 {
-	uint8_t c_char, uc_sno = 1;
+	uint8_t c_char;
+	uint8_t uc_sno = 1; // uc_sno = sequence number
 	int32_t l_done;
-//	uint32_t ul_timeout = 100;
+	uint8_t* p_send_buffer = p_buffer;
+	uint32_t send_length = ul_length;
 
-	if (ul_length & (XMODEM_DATASIZE-1)) {
-		ul_length += XMODEM_DATASIZE;
-		ul_length &= ~(XMODEM_DATASIZE-1);
-	}
-
-	/* Startup synchronization... */
+	/* STEP 1: Startup synchronization... */
 	/* Wait to receive a NAK or 'C' from receiver. */
 	l_done = 0;
 	while(!l_done) {
+		// TODO: implement timeout checking
 		l_done = xmodem_init_xfer(&xmodem_ser_inst);
 	}
 
+	/* STEP 2: Transfer data ... */
 	l_done = 0;
 	uc_sno = 1;
 	while (!l_done) {
-		c_char = send_xmodem_packet(&xmodem_ser_inst, (uint8_t *)p_buffer, uc_sno);
+		c_char = send_xmodem_packet(&xmodem_ser_inst, (uint8_t *)p_send_buffer, uc_sno);
 		switch(c_char) {
-		case ACK:
-			++uc_sno;
-			ul_length -= XMODEM_DATASIZE;
-			p_buffer += XMODEM_DATASIZE;
-			break;
-		case NAK:
-			break;
-		case CANCEL:
-		case EOT:
-		default:
-			l_done = -1;
-			break;
+			case ACK:
+				++uc_sno;
+				send_length-= XMODEM_DATASIZE;
+				p_send_buffer += XMODEM_DATASIZE;
+				break;
+			case NAK:
+				break;
+			case CANCEL:
+			case EOT:
+			default:
+				l_done = -1;
+				break;
 		}
-		if (!ul_length) {
+
+		/* STEP 3: End of Transfer ... */
+		if (!send_length) {
 			xmodem_finish_xfer(&xmodem_ser_inst);
 			/* Flush the ACK */
 			xmodem_flush(&xmodem_ser_inst);

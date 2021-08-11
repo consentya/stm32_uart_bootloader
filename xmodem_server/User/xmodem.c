@@ -76,8 +76,9 @@ xmodem_init_xfer (struct serial *desc)
 		{
 			case 'C':
 			  crcflag = 1;
-			case NAK:
 			  return 1;
+			case NAK:
+			  return 0;
 			default:
 			  // xmodem_init_xfer: Got unexpected character
 			  continue;
@@ -111,6 +112,17 @@ xmodem_init_xfer (struct serial *desc)
  * must be <= 128 bytes).  If it is < 128 bytes, ^Z padding will be added.
  */
 
+void my_memcpy(uint8_t* dst, const uint8_t* src, uint16_t copy_len)
+{
+	uint8_t* src_ptr = src;
+	uint8_t* end_ptr = src + copy_len; /* begin: 0 , len = 5 => 0 ... 4 < 5*/
+
+	while(src_ptr < end_ptr)
+	{
+		*dst++ = *src_ptr++;
+	}
+}
+
 int
 send_xmodem_packet (struct serial *desc, unsigned char *payload, uint16_t blknum)
 {
@@ -118,32 +130,36 @@ send_xmodem_packet (struct serial *desc, unsigned char *payload, uint16_t blknum
   int c;
   int crc;
   int datasize = XMODEM_DATASIZE;
-
+  // =================== STEP 1: BUILD XMODEM FRAME ========================
   /* build the packet header */
   xmd_packet[0] = SOH;
   xmd_packet[1] = blknum;
-  xmd_packet[2] = (uint8_t)(~blknum);
+  xmd_packet[2] = (uint8_t)(~blknum); // complement => a=  1010 ~a = 0101
 
   /* Prepare payload data */
-  memcpy (xmd_packet + 3, payload, datasize);
+  my_memcpy (xmd_packet + 3, payload, datasize); // use custom memcpy
 
-  if (crcflag)
+  if (crcflag) // 'C' -> CRC16
   {
       crc = docrc (payload, datasize);
-      xmd_packet[3 + datasize] = crc >> 8;
-      xmd_packet[3 + datasize + 1] = crc;
+      /* ABCD -> RIGHT SHIFT 8 times */
+      xmd_packet[3 + datasize] = crc >> 8; // High Byte Order
+      xmd_packet[3 + datasize + 1] = crc & 0xFF;  // Low Byte Order
    }
   else
    {
 	  // Do nothing
    }
 
+  // =================== STEP 2: SENDING XMODEM FRAME ========================
   /* Waiting ACK */
   for (retries = 3; retries >= 0; retries--)
   {
+	   // Send frame to serial port
        desc->send_func (xmd_packet, XMODEM_PACKETSIZE);
 
-       c = desc->recv_func (3);
+       // waiting ACK
+       c = desc->recv_func (3); // 3 is time out value = 3 seconds
        switch (c)
 		{
 			case ACK:
@@ -193,5 +209,5 @@ xmodem_finish_xfer (struct serial *desc)
 
 void xmodem_flush (struct serial *desc)
 {
-	(void)desc->recv_func (3);
+	(void)desc->recv_func (3); // Clear UART Data Register
 }
